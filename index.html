@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sheru's Birthday ❤️</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Happy+Monkey&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            font-family: 'Happy Monkey', cursive;
+            overflow-x: hidden;
+            background: #000;
+            color: white;
+            text-align: center;
+        }
+
+        /* --- 1. INTRO LAYER (DOOR) --- */
+        #intro-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+            background: radial-gradient(circle, #2b1055 0%, #000 100%);
+            z-index: 1000; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center;
+            perspective: 1200px;
+        }
+
+        .door-frame {
+            position: relative; width: 280px; height: 420px;
+            background: #2d3436; border-radius: 15px; padding: 10px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            border: 2px solid #ffd700;
+        }
+
+        .door {
+            width: 100%; height: 100%;
+            background: #5d4037; border: 2px solid #3e2723;
+            border-radius: 10px; transform-origin: left;
+            position: relative; display: flex; align-items: center; justify-content: center;
+            transition: transform 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+            /* Wooden Texture Gradient */
+            background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.03) 0, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 10px);
+        }
+
+        .knob {
+            width: 25px; height: 25px; background: radial-gradient(circle, #ffd700, #b8860b);
+            border-radius: 50%; position: absolute; right: 20px;
+            box-shadow: 0 0 10px #ffd700;
+        }
+
+        .sign {
+            position: absolute; top: 40px; background: #fff; color: #000;
+            padding: 5px 15px; font-family: 'Fredoka', sans-serif; font-weight: bold;
+            transform: rotate(-3deg); box-shadow: 0 5px 10px rgba(0,0,0,0.5);
+        }
+
+        .yono-intro {
+            position: absolute; bottom: -20px; right: -50px;
+            width: 160px; height: 160px; z-index: 10; cursor: pointer;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
+        }
+        .yono-img { width: 100%; height: 100%; object-fit: contain; animation: float 3s infinite ease-in-out; }
+
+        .btn-unlock {
+            margin-top: 50px;
+            background: linear-gradient(90deg, #ff0055, #ff4757); color: white;
+            padding: 15px 50px; border-radius: 50px; border: none;
+            font-size: 1.2rem; font-weight: bold; cursor: pointer;
+            box-shadow: 0 0 20px #ff0055; animation: pulse 2s infinite;
+        }
+
+        /* --- 2. MAIN CONTENT (BOXES) --- */
+        #main-world {
+            display: none; /* Hidden initially */
+            position: relative;
+            width: 100%; min-height: 100vh;
+            padding-bottom: 150px;
+        }
+
+        #bg-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+        }
+        #bg-img {
+            width: 100%; height: 100%; object-fit: cover;
+            filter: brightness(0.5); /* Background darkening */
+        }
+
+        /* STICKY ELEMENTS (Couple PNGs) */
+        .sticky-png {
+            position: fixed; bottom: 0; z-index: 500;
+            pointer-events: none;
+            filter: drop-shadow(0 0 10px rgba(255,255,255,0.2));
+            animation: float 4s ease-in-out infinite;
+        }
+        #sticker-left { width: 160px; left: -20px; }
+        #sticker-right { width: 140px; right: -20px; animation-delay: 1s; }
+
+        /* TITLE */
+        .main-title {
+            margin-top: 80px; font-size: 3rem; color: #ff0055;
+            text-shadow: 2px 2px 0 #fff; margin-bottom: 50px;
+        }
+
+        /* GIFT SECTIONS (5 Boxes) */
+        .gift-section {
+            margin-bottom: 80px;
+            position: relative; z-index: 10;
+            opacity: 0; transform: translateY(50px);
+            transition: all 0.8s ease-out;
+        }
+        .gift-section.visible { opacity: 1; transform: translateY(0); }
+
+        .gift-title { margin-bottom: 15px; font-size: 1.5rem; text-shadow: 0px 0px 5px black; color: #ffd700; }
+        .gift-hint { margin-top: -10px; color: #ccc; font-size: 0.9rem; margin-bottom: 15px; }
+
+        /* THE BOX LOGIC (Reveal) */
+        .gift-cover {
+            width: 90%; max-width: 500px; height: 350px;
+            margin: 0 auto;
+            border: 6px solid white; border-radius: 15px;
+            cursor: pointer;
+            background-color: #2d3436; 
+            background-size: cover; background-position: center;
+            /* DEFAULT IMAGE: From your images folder */
+            background-image: url('images/gift-cover.avif'); 
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .gift-cover:hover { transform: scale(1.05); box-shadow: 0 0 20px #ffd700; }
+
+        /* --- HOVER REVEAL LOGIC (YOUR FILES) --- */
+        
+        /* 1. Happy (OtherYou.webp) */
+        .happy-gif:hover, .happy-gif:active {
+            background-image: url('images/OtherYou.webp'); 
+        }
+
+        /* 2. Reaction (respect.gif) */
+        .react-gif:hover, .react-gif:active {
+            background-image: url('images/respect.gif'); 
+        }
+
+        /* 3. Genius/Describe (You.webp) */
+        .genius-gif:hover, .genius-gif:active {
+            background-image: url('images/You.webp'); 
+        }
+
+        /* 4. Badass/Goat (darkness.gif) */
+        .goat-gif:hover, .goat-gif:active {
+            background-image: url('images/darkness.gif'); 
+        }
+
+        /* 5. Cheers (cheers.gif) */
+        .cheers-gif:hover, .cheers-gif:active {
+            background-image: url('images/cheers.gif'); 
+        }
+
+        /* Footer */
+        .footer { padding-bottom: 100px; color: #aaa; font-size: 0.8rem; }
+
+        /* Animations */
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        .blush { filter: sepia(1) hue-rotate(-50deg) saturate(3) !important; }
+
+        /* Mobile Adjustments */
+        @media (max-width: 600px) {
+            #sticker-left { width: 120px; left: -10px; }
+            #sticker-right { width: 110px; right: -10px; }
+            .gift-cover { height: 250px; }
+            .main-title { font-size: 2rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <audio id="bgm" loop><source src="happybirthday.mp3" type="audio/mpeg"></audio>
+
+    <div id="bg-container"><img src="main_bg.jpg" id="bg-img"></div>
+
+    <div id="sticky-layer" style="display:none;">
+        <img src="cuppol.png" class="sticky-png" id="sticker-left">
+        <img src="cuppol1.png" class="sticky-png" id="sticker-right">
+    </div>
+
+    <div id="intro-layer">
+        <div class="door-frame">
+            <div class="door" id="door">
+                <div class="sign">Sheru ❤️</div>
+                <div class="knob"></div>
+            </div>
+            <div class="yono-intro" onclick="yonoReaction(event)">
+                <img src="yono.png" class="yono-img" id="yono-sprite">
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 20px;">
+            <p id="dialogue" style="color:white; font-size:1.2rem; font-weight:bold;">Tap to enter! 🔒</p>
+            <button class="btn-unlock" onclick="openDoor()">Open Door ✨</button>
+        </div>
+    </div>
+
+    <div id="main-world">
+        
+        <h1 class="main-title">Happy Birthday Sheru! 🎂</h1>
+
+        <div class="gift-section">
+            <h2 class="gift-title">Here's how happy I am for you today 🥹</h2>
+            <h3 class="gift-hint">(Touch to Reveal)</h3>
+            <div class="happy-gif gift-cover"></div>
+        </div>
+
+        <div class="gift-section">
+            <h2 class="gift-title">How people react when you enter the room 😲</h2>
+            <div class="gift-hint">(Touch to Reveal)</div>
+            <div class="react-gif gift-cover"></div>
+        </div>
+
+        <div class="gift-section">
+            <h2 class="gift-title">If I had to describe you with ONE word 🧠</h2>
+            <div class="gift-hint">(Touch to Reveal)</div>
+            <div class="genius-gif gift-cover"></div>
+        </div>
+
+        <div class="gift-section">
+            <h2 class="gift-title">The only person as badass as you 😎</h2>
+            <div class="gift-hint">(Touch to Reveal)</div>
+            <div class="goat-gif gift-cover"></div>
+        </div>
+
+        <div class="gift-section">
+            <h2 class="gift-title">This one's for you, my Love 🥂</h2>
+            <div class="gift-hint">(Touch to Reveal)</div>
+            <div class="cheers-gif gift-cover"></div>
+        </div>
+
+        <div class="footer">
+            <p>Made with ❤️ by You</p>
+        </div>
+
+    </div>
+
+    <script>
+        const door = document.getElementById('door');
+        const introLayer = document.getElementById('intro-layer');
+        const mainWorld = document.getElementById('main-world');
+        const stickyLayer = document.getElementById('sticky-layer');
+        const bgm = document.getElementById('bgm');
+
+        // Yono Interaction (Blush)
+        function yonoReaction(e) {
+            e.stopPropagation();
+            const yono = document.getElementById('yono-sprite');
+            // Shake
+            gsap.to(yono, { x: 5, duration: 0.1, yoyo: true, repeat: 5 });
+            // Hearts
+            for(let i=0; i<5; i++) {
+                const h = document.createElement('div');
+                h.innerText = '❤️';
+                h.style.position = 'fixed'; h.style.left = e.clientX+'px'; h.style.top = e.clientY+'px';
+                h.style.fontSize = '24px'; h.style.zIndex = 200; h.style.transition = '1s';
+                document.body.appendChild(h);
+                setTimeout(()=>{ h.style.transform=`translate(${Math.random()*40-20}px, -100px)`; h.style.opacity=0; }, 10);
+                setTimeout(()=>h.remove(), 1000);
+            }
+        }
+
+        // Open Door
+        function openDoor() {
+            // PLAY MUSIC (FileName Fixed)
+            bgm.play().catch(()=>{ console.log("User interaction needed for audio"); });
+            
+            door.style.transform = "rotateY(-110deg)";
+
+            setTimeout(() => {
+                confetti({ particleCount: 200, spread: 100 });
+
+                gsap.to(introLayer, { scale: 3, opacity: 0, duration: 1.2, ease: "power2.in", onComplete: () => {
+                    introLayer.style.display = 'none';
+                    mainWorld.style.display = 'block';
+                    stickyLayer.style.display = 'block';
+
+                    gsap.fromTo(mainWorld, {opacity: 0}, {opacity: 1, duration: 1});
+                    initScrollObserver();
+                }});
+            }, 1200);
+        }
+
+        // Scroll Reveal
+        function initScrollObserver() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            document.querySelectorAll('.gift-section').forEach(sec => observer.observe(sec));
+        }
+    </script>
+</body>
+</html>
